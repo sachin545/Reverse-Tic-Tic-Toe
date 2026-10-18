@@ -100,7 +100,7 @@ namespace ReverseTicTacToe
             if (turnText != null)
             {
                 turnText.text = $"PLAYER {playerSymbol}'S TURN";
-                turnText.color = playerColor;
+                //turnText.color = playerColor;
             }
 
             if (turnIndicatorBadge != null)

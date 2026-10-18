@@ -16,7 +16,7 @@ namespace ReverseTicTacToe.Editor
         private const string PREFAB_DIR = "Assets/Prefabs";
         private const string PREFAB_PATH = "Assets/Prefabs/GridCellPrefab.prefab";
         private const string ART_DIR = "Assets/Art/Sprites";
-        private const string FLAG_PATH = "Temp/ReverseTicTacToeBuilt.flag";
+        private const string FLAG_PATH = "Temp/ReverseTicTacToeBuilt_v2.flag";
         private const string LOG_PATH = "Temp/ReverseTicTacToeBuildLog.txt";
 
         static GameSceneBuilder()
@@ -26,7 +26,7 @@ namespace ReverseTicTacToe.Editor
 
         private static void CheckAndAutoBuild()
         {
-            if (File.Exists(PREFAB_PATH) || File.Exists(FLAG_PATH)) return;
+            if (File.Exists(FLAG_PATH)) return;
             try
             {
                 File.WriteAllText(LOG_PATH, "Starting BuildCompleteGame at " + System.DateTime.Now + "\n");
@@ -53,11 +53,32 @@ namespace ReverseTicTacToe.Editor
             Sprite circleSprite = CreateOrGetCircleSprite();
             Sprite borderSprite = CreateOrGetBorderSprite();
 
-            GameObject cellPrefab = CreateOrUpdateGridCellPrefab(roundBoxSprite, borderSprite);
+            Sprite xSprite = LoadSymbolSprite("Assets/Sprites/X_Sprite.png");
+            if (xSprite == null) xSprite = LoadSymbolSprite("Assets/Sprites/x.png");
 
-            BuildScene(roundBoxSprite, circleSprite, borderSprite, cellPrefab);
+            Sprite oSprite = LoadSymbolSprite("Assets/Sprites/O_Sprite.png");
+            if (oSprite == null) oSprite = LoadSymbolSprite("Assets/Sprites/o.png");
+
+            GameObject cellPrefab = CreateOrUpdateGridCellPrefab(roundBoxSprite, borderSprite, xSprite, oSprite);
+
+            BuildScene(roundBoxSprite, circleSprite, borderSprite, cellPrefab, xSprite, oSprite);
 
             Debug.Log("[GameSceneBuilder] Game scene successfully built and saved!");
+        }
+
+        private static Sprite LoadSymbolSprite(string path)
+        {
+            if (!File.Exists(path)) return null;
+            TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer != null)
+            {
+                bool changed = false;
+                if (importer.textureType != TextureImporterType.Sprite) { importer.textureType = TextureImporterType.Sprite; changed = true; }
+                if (importer.spriteImportMode != SpriteImportMode.Single) { importer.spriteImportMode = SpriteImportMode.Single; changed = true; }
+                if (!importer.alphaIsTransparency) { importer.alphaIsTransparency = true; changed = true; }
+                if (changed) importer.SaveAndReimport();
+            }
+            return AssetDatabase.LoadAssetAtPath<Sprite>(path);
         }
 
         private static void EnsureDirectories()
@@ -207,7 +228,7 @@ namespace ReverseTicTacToe.Editor
             return AssetDatabase.LoadAssetAtPath<Sprite>(path);
         }
 
-        private static GameObject CreateOrUpdateGridCellPrefab(Sprite roundBox, Sprite borderSprite)
+        private static GameObject CreateOrUpdateGridCellPrefab(Sprite roundBox, Sprite borderSprite, Sprite xSprite, Sprite oSprite)
         {
             GameObject cellObj = new GameObject("GridCell", typeof(RectTransform));
             RectTransform rect = cellObj.GetComponent<RectTransform>();
@@ -243,7 +264,22 @@ namespace ReverseTicTacToe.Editor
             overlayImg.color = new Color(1f, 0.15f, 0.25f, 0.9f);
             overlayObj.SetActive(false);
 
-            // Symbol Text
+            // Symbol Image (for rendering X and O sprites)
+            GameObject imageObj = new GameObject("SymbolImage", typeof(RectTransform));
+            imageObj.transform.SetParent(cellObj.transform, false);
+            RectTransform imgRect = imageObj.GetComponent<RectTransform>();
+            imgRect.anchorMin = Vector2.zero;
+            imgRect.anchorMax = Vector2.one;
+            imgRect.offsetMin = new Vector2(14, 14);
+            imgRect.offsetMax = new Vector2(-14, -14);
+            Image symbolImg = imageObj.AddComponent<Image>();
+            symbolImg.sprite = null;
+            symbolImg.color = Color.white;
+            symbolImg.preserveAspect = true;
+            symbolImg.raycastTarget = false;
+            symbolImg.enabled = false;
+
+            // Symbol Text (optional fallback)
             GameObject textObj = new GameObject("SymbolText", typeof(RectTransform));
             textObj.transform.SetParent(cellObj.transform, false);
             RectTransform textRect = textObj.GetComponent<RectTransform>();
@@ -261,10 +297,11 @@ namespace ReverseTicTacToe.Editor
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.color = Color.white;
             tmp.raycastTarget = false;
+            textObj.SetActive(false); // Inactive since we are using image sprites
 
             // GridCell component
             GridCell gridCell = cellObj.AddComponent<GridCell>();
-            gridCell.ConfigureComponents(btn, bg, tmp, overlayImg);
+            gridCell.ConfigureComponents(btn, bg, symbolImg, tmp, overlayImg, xSprite, oSprite);
 
             // Save Prefab
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(cellObj, PREFAB_PATH);
@@ -273,7 +310,7 @@ namespace ReverseTicTacToe.Editor
             return prefab;
         }
 
-        private static void BuildScene(Sprite roundBox, Sprite circleSprite, Sprite borderSprite, GameObject cellPrefab)
+        private static void BuildScene(Sprite roundBox, Sprite circleSprite, Sprite borderSprite, GameObject cellPrefab, Sprite xSprite, Sprite oSprite)
         {
             var scene = EditorSceneManager.OpenScene(SCENE_PATH, OpenSceneMode.Single);
 
@@ -677,7 +714,9 @@ namespace ReverseTicTacToe.Editor
                 uiManager,
                 new Color(0f, 0.9f, 1f, 1f),       // Player X: Cyan
                 new Color(1f, 0.25f, 0.45f, 1f),   // Player O: Coral Pink
-                new Color(1f, 0.15f, 0.25f, 1f)    // Loss alert: Red
+                new Color(1f, 0.15f, 0.25f, 1f),   // Loss alert: Red
+                xSprite,
+                oSprite
             );
 
             // Save Scene

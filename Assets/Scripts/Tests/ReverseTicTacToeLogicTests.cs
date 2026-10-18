@@ -280,5 +280,76 @@ namespace ReverseTicTacToe.Tests
                 }
             }
         }
+
+        [Test]
+        public void Test_GridCell_SetsXSprite_ForPlayerX()
+        {
+            GameObject cellObj = new GameObject("TestCell");
+            GridCell cell = cellObj.AddComponent<GridCell>();
+
+            GameObject imgObj = new GameObject("TestSymbolImage");
+            imgObj.transform.SetParent(cellObj.transform);
+            UnityEngine.UI.Image img = imgObj.AddComponent<UnityEngine.UI.Image>();
+
+            Sprite fakeX = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 4, 4), Vector2.zero);
+            Sprite fakeO = Sprite.Create(Texture2D.blackTexture, new Rect(0, 0, 4, 4), Vector2.zero);
+
+            cell.ConfigureComponents(null, null, img, null, null, fakeX, fakeO);
+            cell.SetSymbol(PlayerType.X, Color.white, animate: false);
+
+            Assert.AreEqual(fakeX, cell.SymbolImage.sprite, "Player X must display the X sprite.");
+            Assert.IsTrue(cell.SymbolImage.enabled, "SymbolImage must be enabled when a symbol is placed.");
+            Assert.AreEqual(PlayerType.X, cell.CurrentSymbol);
+
+            Object.DestroyImmediate(cellObj);
+        }
+
+        [Test]
+        public void Test_GridCell_SetsOSprite_ForPlayerO()
+        {
+            GameObject cellObj = new GameObject("TestCell");
+            GridCell cell = cellObj.AddComponent<GridCell>();
+
+            GameObject imgObj = new GameObject("TestSymbolImage");
+            imgObj.transform.SetParent(cellObj.transform);
+            UnityEngine.UI.Image img = imgObj.AddComponent<UnityEngine.UI.Image>();
+
+            Sprite fakeX = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 4, 4), Vector2.zero);
+            Sprite fakeO = Sprite.Create(Texture2D.blackTexture, new Rect(0, 0, 4, 4), Vector2.zero);
+
+            cell.ConfigureComponents(null, null, img, null, null, fakeX, fakeO);
+            cell.SetSymbol(PlayerType.O, Color.white, animate: false);
+
+            Assert.AreEqual(fakeO, cell.SymbolImage.sprite, "Player O must display the O sprite.");
+            Assert.IsTrue(cell.SymbolImage.enabled, "SymbolImage must be enabled when a symbol is placed.");
+            Assert.AreEqual(PlayerType.O, cell.CurrentSymbol);
+
+            Object.DestroyImmediate(cellObj);
+        }
+
+        [Test]
+        public void Test_GridCell_Reset_ClearsSprite()
+        {
+            GameObject cellObj = new GameObject("TestCell");
+            GridCell cell = cellObj.AddComponent<GridCell>();
+
+            GameObject imgObj = new GameObject("TestSymbolImage");
+            imgObj.transform.SetParent(cellObj.transform);
+            UnityEngine.UI.Image img = imgObj.AddComponent<UnityEngine.UI.Image>();
+
+            Sprite fakeX = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 4, 4), Vector2.zero);
+            Sprite fakeO = Sprite.Create(Texture2D.blackTexture, new Rect(0, 0, 4, 4), Vector2.zero);
+
+            cell.ConfigureComponents(null, null, img, null, null, fakeX, fakeO);
+            cell.SetSymbol(PlayerType.X, Color.white, animate: false);
+
+            cell.ResetCell();
+
+            Assert.IsNull(cell.SymbolImage.sprite, "Resetting cell must clear the sprite.");
+            Assert.IsFalse(cell.SymbolImage.enabled, "SymbolImage must be disabled after reset.");
+            Assert.AreEqual(PlayerType.None, cell.CurrentSymbol);
+
+            Object.DestroyImmediate(cellObj);
+        }
     }
 }

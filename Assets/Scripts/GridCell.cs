@@ -7,15 +7,20 @@ namespace ReverseTicTacToe
 {
     /// <summary>
     /// Represents an individual cell on the 5x5 game board.
-    /// Manages interaction, symbol display, and visual animations.
+    /// Manages interaction, symbol sprite display, and visual animations.
     /// </summary>
     public class GridCell : MonoBehaviour
     {
         [Header("UI References")]
         [SerializeField] private Button cellButton;
         [SerializeField] private Image backgroundImage;
+        [SerializeField] private Image symbolImage;
         [SerializeField] private TextMeshProUGUI symbolText;
         [SerializeField] private Image highlightOverlay;
+
+        [Header("Symbol Sprites")]
+        [SerializeField] private Sprite xSprite;
+        [SerializeField] private Sprite oSprite;
 
         [Header("Colors")]
         [SerializeField] private Color defaultCellColor = new Color(0.12f, 0.16f, 0.23f, 1f); // Dark slate
@@ -27,15 +32,24 @@ namespace ReverseTicTacToe
         public PlayerType CurrentSymbol { get; private set; } = PlayerType.None;
         public bool IsOccupied => CurrentSymbol != PlayerType.None;
 
+        public Image SymbolImage => symbolImage;
+        public Sprite XSprite => xSprite;
+        public Sprite OSprite => oSprite;
+
         private System.Action<int, int> onCellClickedCallback;
         private Coroutine animCoroutine;
         private Coroutine pulseCoroutine;
 
-        public void Init(int row, int col, System.Action<int, int> onClickCallback)
+        public void Init(int row, int col, System.Action<int, int> onClickCallback, Sprite xSp = null, Sprite oSp = null)
         {
             Row = row;
             Col = col;
             onCellClickedCallback = onClickCallback;
+
+            if (xSp != null) xSprite = xSp;
+            if (oSp != null) oSprite = oSp;
+
+            EnsureSpritesLoaded();
 
             if (cellButton != null)
             {
@@ -46,6 +60,27 @@ namespace ReverseTicTacToe
             ResetCell();
         }
 
+        public void SetSprites(Sprite x, Sprite o)
+        {
+            if (x != null) xSprite = x;
+            if (o != null) oSprite = o;
+        }
+
+        private void EnsureSpritesLoaded()
+        {
+            if (xSprite == null)
+            {
+                xSprite = Resources.Load<Sprite>("Sprites/X_Sprite");
+                if (xSprite == null) xSprite = Resources.Load<Sprite>("X_Sprite");
+            }
+
+            if (oSprite == null)
+            {
+                oSprite = Resources.Load<Sprite>("Sprites/O_Sprite");
+                if (oSprite == null) oSprite = Resources.Load<Sprite>("O_Sprite");
+            }
+        }
+
         private void HandleClick()
         {
             if (IsOccupied) return;
@@ -53,16 +88,27 @@ namespace ReverseTicTacToe
         }
 
         /// <summary>
-        /// Sets the symbol for this cell with a pop-in animation.
+        /// Sets the symbol sprite for this cell with a pop-in animation.
         /// </summary>
         public void SetSymbol(PlayerType player, Color symbolColor, bool animate = true)
         {
             CurrentSymbol = player;
+            EnsureSpritesLoaded();
 
+            Sprite spriteToDisplay = player == PlayerType.X ? xSprite : (player == PlayerType.O ? oSprite : null);
+
+            if (symbolImage != null)
+            {
+                symbolImage.sprite = spriteToDisplay;
+                symbolImage.preserveAspect = true;
+                symbolImage.color = Color.white;
+                symbolImage.enabled = (spriteToDisplay != null);
+            }
+
+            // Clear text component so text does not overlay on the sprite
             if (symbolText != null)
             {
-                symbolText.text = player == PlayerType.X ? "X" : (player == PlayerType.O ? "O" : "");
-                symbolText.color = symbolColor;
+                symbolText.text = "";
             }
 
             if (backgroundImage != null)
@@ -80,9 +126,10 @@ namespace ReverseTicTacToe
                 if (animCoroutine != null) StopCoroutine(animCoroutine);
                 animCoroutine = StartCoroutine(AnimateSymbolPop());
             }
-            else if (symbolText != null)
+            else
             {
-                symbolText.transform.localScale = Vector3.one;
+                if (symbolImage != null) symbolImage.transform.localScale = Vector3.one;
+                if (symbolText != null) symbolText.transform.localScale = Vector3.one;
             }
         }
 
@@ -113,6 +160,13 @@ namespace ReverseTicTacToe
             }
 
             CurrentSymbol = PlayerType.None;
+
+            if (symbolImage != null)
+            {
+                symbolImage.sprite = null;
+                symbolImage.enabled = false;
+                symbolImage.transform.localScale = Vector3.one;
+            }
 
             if (symbolText != null)
             {
@@ -146,9 +200,9 @@ namespace ReverseTicTacToe
 
         private IEnumerator AnimateSymbolPop()
         {
-            if (symbolText == null) yield break;
+            Transform t = symbolImage != null ? symbolImage.transform : (symbolText != null ? symbolText.transform : null);
+            if (t == null) yield break;
 
-            Transform t = symbolText.transform;
             t.localScale = Vector3.zero;
 
             float duration = 0.22f;
@@ -193,7 +247,11 @@ namespace ReverseTicTacToe
                     backgroundImage.color = Color.Lerp(baseBg, flashBg, t);
                 }
 
-                if (symbolText != null)
+                if (symbolImage != null)
+                {
+                    symbolImage.transform.localScale = Vector3.one * (1f + t * 0.15f);
+                }
+                else if (symbolText != null)
                 {
                     symbolText.transform.localScale = Vector3.one * (1f + t * 0.15f);
                 }
@@ -209,12 +267,15 @@ namespace ReverseTicTacToe
         }
 
         // Editor helper for setting references
-        public void ConfigureComponents(Button btn, Image bg, TextMeshProUGUI text, Image overlay = null)
+        public void ConfigureComponents(Button btn, Image bg, Image symImg, TextMeshProUGUI text = null, Image overlay = null, Sprite xSp = null, Sprite oSp = null)
         {
             cellButton = btn;
             backgroundImage = bg;
+            symbolImage = symImg;
             symbolText = text;
             highlightOverlay = overlay;
+            if (xSp != null) xSprite = xSp;
+            if (oSp != null) oSprite = oSp;
         }
     }
 }

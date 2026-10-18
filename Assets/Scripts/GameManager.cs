@@ -23,6 +23,10 @@ namespace ReverseTicTacToe
         [Header("References")]
         [SerializeField] private UIManager uiManager;
 
+        [Header("Symbol Sprites")]
+        [SerializeField] private Sprite xSprite;
+        [SerializeField] private Sprite oSprite;
+
         // Board State
         private PlayerType[,] board = new PlayerType[BOARD_SIZE, BOARD_SIZE];
         private GridCell[,] cellViews = new GridCell[BOARD_SIZE, BOARD_SIZE];
@@ -112,7 +116,7 @@ namespace ReverseTicTacToe
                         cell = cellObj.AddComponent<GridCell>();
                     }
 
-                    cell.Init(r, c, OnCellClicked);
+                    cell.Init(r, c, OnCellClicked, xSprite, oSprite);
                     cellViews[r, c] = cell;
                 }
             }
@@ -341,12 +345,14 @@ namespace ReverseTicTacToe
         }
 
         // Configuration helper for Editor setup script
-        public void ConfigureReferences(UIManager ui, Color colX, Color colO, Color colLoss)
+        public void ConfigureReferences(UIManager ui, Color colX, Color colO, Color colLoss, Sprite xSp = null, Sprite oSp = null)
         {
             uiManager = ui;
             playerXColor = colX;
             playerOColor = colO;
             losingLineColor = colLoss;
+            if (xSp != null) xSprite = xSp;
+            if (oSp != null) oSprite = oSp;
         }
 
         // Test helper
