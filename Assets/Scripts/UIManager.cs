@@ -141,7 +141,7 @@ namespace ReverseTicTacToe
             if (gameOverTitleText != null)
             {
                 gameOverTitleText.text = title;
-                gameOverTitleText.color = bannerColor;
+               // gameOverTitleText.color = bannerColor;
             }
 
             if (gameOverSubtitleText != null)
